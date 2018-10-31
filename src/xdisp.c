@@ -21240,6 +21240,7 @@ maybe_produce_line_number (struct it *it)
       /* For continuation lines and lines after ZV, instead of a line
 	 number, produce a blank prefix of the same width.  */
       if (lnum_face_id != current_lnum_face_id
+	  && !beyond_zv
 	  && (EQ (Vdisplay_line_numbers, Qvisual)
 	      ? this_line == 0
 	      : this_line == it->pt_lnum))
