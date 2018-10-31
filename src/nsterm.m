@@ -7586,11 +7586,22 @@ not_in_argv (NSString *arg)
   maximizing_resize = NO;
 #endif
 
-  win = [[EmacsWindow alloc]
+#ifdef NS_DRAW_TO_BUFFER
+  [self createDrawingBuffer];
+#endif
+
+  win = [[EmacsFSWindow alloc]
             initWithContentRect: r
-                      styleMask: (FRAME_UNDECORATED (f)
-                                  ? FRAME_UNDECORATED_FLAGS
-                                  : FRAME_DECORATED_FLAGS)
+                      styleMask: (//(FRAME_UNDECORATED (f)
+                                  //? FRAME_UNDECORATED_FLAGS
+                                   FRAME_UNDECORATED_FLAGS
+                                   //: FRAME_DECORATED_FLAGS)
+#ifdef NS_IMPL_COCOA
+                                  | NSWindowStyleMaskResizable
+                                  | NSWindowStyleMaskMiniaturizable
+                                  | NSWindowStyleMaskClosable
+#endif
+                                  )
                         backing: NSBackingStoreBuffered
                           defer: YES];
 
