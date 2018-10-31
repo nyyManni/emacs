@@ -416,6 +416,7 @@ typedef id instancetype;
    int maximized_width, maximized_height;
    NSWindow *nonfs_window;
    BOOL fs_is_native;
+   BOOL ongoing_scroll;
 @public
    struct frame *emacsframe;
    int rows, cols;

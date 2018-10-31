@@ -60,6 +60,7 @@ GNUstep port and post-20 update by Adrian Robert (arobert@cogsci.ucsd.edu)
 #include "keyboard.h"
 #include "buffer.h"
 #include "font.h"
+#include "indent.h"
 
 #ifdef NS_IMPL_GNUSTEP
 #include "process.h"
@@ -3287,6 +3288,8 @@ ns_draw_vertical_window_border (struct window *w, int x, int y0, int y1)
       ns_reset_clipping (f);
     }
 }
+
+
 
 
 static void
@@ -6822,7 +6825,139 @@ not_in_argv (NSString *arg)
 - (void) scrollWheel: (NSEvent *)theEvent
 {
   NSTRACE ("[EmacsView scrollWheel:]");
-  [self mouseDown: theEvent];
+
+  struct ns_display_info *dpyinfo = FRAME_DISPLAY_INFO (emacsframe);
+  NSPoint p = [self convertPoint: [theEvent locationInWindow] fromView: nil];
+
+  [self deleteWorkingText];
+
+  if (!emacs_event) return;
+
+  dpyinfo->last_mouse_frame = emacsframe;
+  emacsframe->mouse_moved = 0;
+  Lisp_Object win = FRAME_SELECTED_WINDOW (emacsframe);
+  struct window *w = XWINDOW (win);
+
+  if ([theEvent hasPreciseScrollingDeltas])
+    /* The event was produced with a touch pad or a magic mouse. */
+    {
+      NSEventPhase phase = [theEvent phase];
+      if (phase == NSEventPhaseNone)
+        phase = [theEvent momentumPhase];
+
+
+      switch (phase)
+        {
+      case NSEventPhaseBegan:
+          ongoing_scroll = true;
+          /* Fall-through into NSEventPhaseChanged. */
+      case NSEventPhaseChanged:
+
+          /* Previous scroll hit the top and we are trying to move
+             more up*/
+          if (!ongoing_scroll && [theEvent scrollingDeltaY] > 0)
+            return;
+          else
+            ongoing_scroll = true;
+
+          int scroll_lines = 0;
+          int scroll_unit = emacsframe->line_height;
+
+          w->vscroll += [theEvent scrollingDeltaY];
+
+          if (marker_position (w->start) <= BEGV && w->vscroll >= 0)
+            {
+              w->vscroll = 0;
+              ongoing_scroll = false;
+            }
+
+          while (w->vscroll > 0)
+            {
+              w->vscroll -= scroll_unit;
+              scroll_lines--;
+            }
+          while (w->vscroll < -scroll_unit)
+            {
+              w->vscroll += scroll_unit;
+              scroll_lines++;
+            }
+
+            /* Move point to window center if necessary. */
+            int point_y = WINDOW_TOP_EDGE_Y (w) + w->cursor.y;
+            int window_start = WINDOW_TOP_EDGE_Y (w) \
+                + WINDOW_HEADER_LINE_HEIGHT(w);
+            int window_end = WINDOW_BOTTOM_EDGE_Y (w) \
+                - scroll_unit - w->mode_line_height;
+
+            if (/* Point at the very top of buffer. */
+                ([theEvent scrollingDeltaY] < 0  && point_y <= window_start)
+                ||
+                /* Point about to go out of bounds at the top. */
+                (scroll_lines > 0
+                 && point_y < (window_start + abs (scroll_lines * scroll_unit)))
+
+                )
+              {
+                // struct position pos;
+                // pos = *vmotion (PT, PT_BYTE, XINT (80), w);
+                // SET_PT_BOTH (pos.bufpos, pos.bytepos);
+                Fmove_to_window_line (Qnil); /* TODO: Something better. */
+
+              }
+            else if
+                (
+                // ||
+                /* Point about to go out of bounds at the bottom. */
+                (scroll_lines < 0
+                && point_y + scroll_unit
+                + abs (scroll_lines * scroll_unit) > window_end))
+              {
+                // struct position pos;
+                // pos = *vmotion (PT, PT_BYTE, XINT (-80), w);
+                // SET_PT_BOTH (pos.bufpos, pos.bytepos);
+                Fmove_to_window_line (Qnil); /* TODO: Something better. */
+              }
+
+          if (scroll_lines)
+            {
+              /* Scroll the window. */
+              Lisp_Object opoint_marker = Fpoint_marker ();
+              ptrdiff_t pos, pos_byte;
+              ptrdiff_t startpos = marker_position (w->start);
+              ptrdiff_t startbyte = marker_byte_position (w->start);
+              SET_PT_BOTH (startpos, startbyte);
+
+              /* From Fvertical_motion, non-interactive part. */
+              {
+                struct position pos;
+                pos = *vmotion (PT, PT_BYTE, scroll_lines, w);
+                SET_PT_BOTH (pos.bufpos, pos.bytepos);
+              }
+              pos = PT;
+              pos_byte = PT_BYTE;
+              SET_PT_BOTH (marker_position (opoint_marker),
+                           marker_byte_position (opoint_marker));
+
+              set_marker_restricted_both (w->start, w->contents, pos,
+                                          pos_byte);
+
+            }
+            break;
+        case NSEventPhaseEnded:
+            ongoing_scroll = false;
+            break;
+        }
+
+      emacs_event->kind = WHEEL_EVENT;
+      emacs_event->code = 0;
+      emacs_event->modifiers = EV_MODIFIERS (theEvent) | up_modifier;
+      XSETINT (emacs_event->x, lrint (p.x));
+      XSETINT (emacs_event->y, lrint (p.y));
+      EV_TRAILER (theEvent);
+    }
+  else
+    /* TODO: Regular mouse scroll */
+    [self mouseDown: theEvent];
 }
 
 
@@ -9191,6 +9326,7 @@ not_in_argv (NSString *arg)
 - (void) scrollWheel: (NSEvent *)theEvent
 {
   NSTRACE ("[EmacsScroller scrollWheel:]");
+
 
   EmacsView *view = (EmacsView *)FRAME_NS_VIEW (frame);
   [view mouseDown: theEvent];

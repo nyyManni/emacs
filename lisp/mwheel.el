@@ -304,7 +304,7 @@ non-Windows systems."
 	  (run-with-timer mouse-wheel-inhibit-click-time nil
 			  'mwheel-inhibit-click-timeout))))
 
-(put 'mwheel-scroll 'scroll-command t)
+;; (put 'mwheel-scroll 'scroll-command t)
 
 (defvar mwheel-installed-bindings nil)
 

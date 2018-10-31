@@ -5843,7 +5843,7 @@ make_lispy_event (struct input_event *event)
 	else if (event->modifiers & (double_modifier | triple_modifier))
 	  return list3 (head, position, make_fixnum (double_click_count));
 	else
-	  return list2 (head, position);
+	  return list3 (head, position, event->arg);
       }
 
 
