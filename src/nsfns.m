@@ -2757,7 +2757,21 @@ DEFUN ("x-show-tip", Fx_show_tip, Sx_show_tip, 1, 6, 0,
   if (ns_lisp_to_color (t, &color) == 0)
     [ns_tooltip setForegroundColor: color];
 
+  char *font_family = "Menlo";
+  int font_size = 10;
+
+  [ns_tooltip setFont: [NSString stringWithUTF8String: font_family]
+             withSize: font_size];
   [ns_tooltip setText: str];
+
+  struct face *bg_face, *text_face;
+  bg_face = FACE_FROM_ID_OR_NULL (f, MODE_LINE_FACE_ID);
+  text_face = FACE_FROM_ID_OR_NULL (f, DEFAULT_FACE_ID);
+  color = ns_lookup_indexed_color (bg_face->background, f);
+  NSColor *textColor = ns_lookup_indexed_color (text_face->foreground, f);
+
+  [ns_tooltip setColor: [color colorWithAlphaComponent: 0.6]];
+  [ns_tooltip setTextColor: [textColor colorWithAlphaComponent: 1.0]];
   size = [ns_tooltip frame].size;
 
   /* Move the tooltip window where the mouse pointer is.  Resize and

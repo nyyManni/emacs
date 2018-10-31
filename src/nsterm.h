@@ -584,6 +584,9 @@ typedef id instancetype;
     NSTimer *timer;
   }
 - (instancetype) init;
+- (void) setFont: (NSString *)f withSize: (int)s;
+- (void) setColor: (NSColor *)color;
+- (void) setTextColor: (NSColor *)color;
 - (void) setText: (char *)text;
 - (void) setBackgroundColor: (NSColor *)col;
 - (void) setForegroundColor: (NSColor *)col;
