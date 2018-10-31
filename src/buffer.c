@@ -197,6 +197,11 @@ bset_ctl_arrow (struct buffer *b, Lisp_Object val)
   b->ctl_arrow_ = val;
 }
 static void
+bset_show_fill_column_indicator (struct buffer *b, Lisp_Object val)
+{
+  b->show_fill_column_indicator_ = val;
+}
+static void
 bset_cursor_in_non_selected_windows (struct buffer *b, Lisp_Object val)
 {
   b->cursor_in_non_selected_windows_ = val;
@@ -5142,6 +5147,7 @@ init_buffer_once (void)
   XSETFASTINT (BVAR (&buffer_local_flags, header_line_format), idx); ++idx;
   XSETFASTINT (BVAR (&buffer_local_flags, cursor_type), idx); ++idx;
   XSETFASTINT (BVAR (&buffer_local_flags, extra_line_spacing), idx); ++idx;
+  XSETFASTINT (BVAR (&buffer_local_flags, show_fill_column_indicator), idx); ++idx;
   XSETFASTINT (BVAR (&buffer_local_flags, cursor_in_non_selected_windows), idx); ++idx;
 
   /* Need more room? */
@@ -5206,6 +5212,7 @@ init_buffer_once (void)
   bset_bidi_paragraph_separate_re (&buffer_defaults, Qnil);
   bset_cursor_type (&buffer_defaults, Qt);
   bset_extra_line_spacing (&buffer_defaults, Qnil);
+  bset_show_fill_column_indicator (&buffer_defaults, Qnil);
   bset_cursor_in_non_selected_windows (&buffer_defaults, Qt);
 
   bset_enable_multibyte_characters (&buffer_defaults, Qt);
@@ -6202,6 +6209,12 @@ The space is measured in pixels, and put below lines on graphic displays,
 see `display-graphic-p'.
 If value is a floating point number, it specifies the spacing relative
 to the default frame line height.  A value of nil means add no extra space.  */);
+
+  DEFVAR_PER_BUFFER ("show-fill-column-indicator",
+		     &BVAR (current_buffer, show_fill_column_indicator), Qnil,
+		     doc: /* Non-nil means draw a fill column indicator for buffer.
+The indicator is a one-pixel vertical line and it will be drawn at
+FILL_COLUMN buffer-local variable.  */);
 
   DEFVAR_PER_BUFFER ("cursor-in-non-selected-windows",
 		     &BVAR (current_buffer, cursor_in_non_selected_windows), Qnil,

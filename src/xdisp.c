@@ -21272,6 +21272,7 @@ maybe_produce_line_number (struct it *it)
 
   /* Record the width in pixels we need for the line number display.  */
   it->lnum_pixel_width = tem_it.current_x;
+  it->w->linum_width = tem_it.current_x;
   /* Copy the produced glyphs into IT's glyph_row.  */
   struct glyph *g = scratch_glyph_row.glyphs[TEXT_AREA];
   struct glyph *e = g + scratch_glyph_row.used[TEXT_AREA];
@@ -31989,6 +31990,39 @@ expose_line (struct window *w, struct glyph_row *row, XRectangle *r)
       if (row->used[RIGHT_MARGIN_AREA])
 	expose_area (w, row, r, RIGHT_MARGIN_AREA);
       draw_row_fringe_bitmaps (w, row);
+
+      struct frame *f = XFRAME (w->frame);
+      struct buffer *buf = XBUFFER (w->contents);
+
+      if (buf && !NILP (BVAR (buf, show_fill_column_indicator))) {
+        int fill_column_ = XFIXNUM (BVAR (buf, fill_column));
+
+        /* Account for possible hscrolling */
+        fill_column_ -= w->hscroll;
+
+        /* Columns to pixels */
+        fill_column_ *= FRAME_COLUMN_WIDTH(f);
+
+        int text_begin = WINDOW_TEXT_TO_FRAME_PIXEL_X(w, w->linum_width);
+
+        TRACE(("row %d:\t%u -> %d\t%d\n", row->hash, row->y,
+               row->y + row->visible_height, fill_column_));
+
+        /* Hash seeems to be 0 for the ghost row in top of the window. */
+        int x = text_begin + fill_column_;
+        int window_end = WINDOW_TEXT_TO_FRAME_PIXEL_X(w, w->pixel_width);
+        int window_bottom = WINDOW_BOTTOM_EDGE_Y (w) - w->mode_line_height;
+        if (row->hash && (x < window_end)) {
+          int y0 = WINDOW_TOP_EDGE_Y (w) + row->y;
+          int y1 = WINDOW_TOP_EDGE_Y (w) + row->y + row->visible_height + 2;
+
+          /* Ensure that the line stays inside the window. */
+          y0 = y0 > WINDOW_TOP_EDGE_Y (w) ? y0 : WINDOW_TOP_EDGE_Y (w);
+          y1 = y1 < window_bottom ? y1 : window_bottom;
+
+          FRAME_RIF (f)->draw_vertical_window_border(w, x, y0, y1);
+        }
+      }
     }
 
   return row->mouse_face_p;

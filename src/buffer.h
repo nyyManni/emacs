@@ -736,6 +736,10 @@ struct buffer
      in the display of this buffer.  */
   Lisp_Object extra_line_spacing_;
 
+  /* A boolean flag indicating whether we should draw a visual fill
+     column indicator in the buffer at fill_column_.  */
+  Lisp_Object show_fill_column_indicator_;
+
   /* Cursor type to display in non-selected windows.
      t means to use hollow box cursor.
      See `cursor-type' for other values.  */
