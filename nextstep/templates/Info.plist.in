@@ -23,6 +23,8 @@ along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
+        <key>LSUIPresentationMode</key>
+        <integer>4</integer>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
